@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from pathlib import Path
 
@@ -115,6 +116,21 @@ provider_df = load_provider_data()
 
 @st.cache_resource
 def get_gemini_client():
+    # Support both local development (environment variable) and
+    # Streamlit Community Cloud (st.secrets). Never hardcode the API key.
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    if not api_key:
+        try:
+            api_key = st.secrets["GEMINI_API_KEY"]
+        except (KeyError, FileNotFoundError):
+            api_key = None
+
+    if api_key:
+        return genai.Client(api_key=api_key)
+
+    # Preserve the existing local setup if credentials are already
+    # available through the Google GenAI SDK environment configuration.
     return genai.Client()
 
 # ============================================================
